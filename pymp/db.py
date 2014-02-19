@@ -1,16 +1,16 @@
 from collections import namedtuple
 
 
-class Query(namedtuple('Query', 'sql results headers')):
-    def __new__(cls, sql, results=None, headers=None):
-        return super(Query, cls).__new__(cls, sql, results, headers)
+class Query(namedtuple('Query', 'sql data headers')):
+    def __new__(cls, sql, data=None, headers=None):
+        return super(Query, cls).__new__(cls, sql, data, headers)
 
 
 def execute(conn, query):
     cur = conn.cursor()
     try:
         cur.execute(query.sql)
-        res = [row for row in cur]
+        data = [row for row in cur]
         try:
             headers = [i[0] for i in cur.description]
         except TypeError:
@@ -18,9 +18,12 @@ def execute(conn, query):
     finally:
         cur.close()
 
-    return Query(query.sql, res, headers)
+    return Query(query.sql, data, headers)
 
 
-def map_results(name, query):
-    Typ = namedtuple(name, query.headers)
-    return [Typ(*res) for res in query.results]
+def map_data(identifier, query):
+    if isinstance(identifier, basestring):
+        Type = namedtuple(identifier, query.headers)
+    else:
+        Type = identifier
+    return [Type(*data) for data in query.data]
