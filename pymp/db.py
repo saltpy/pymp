@@ -1,12 +1,13 @@
 from collections import namedtuple
 
 
-Query = namedtuple('Query', 'sql results')
+class Query(namedtuple('Query', 'sql results headers')):
+    def __new__(cls, sql, results=None, headers=None):
+        return super(Query, cls).__new__(cls, sql, results, headers)
 
 
 def execute(conn, query):
     cur = conn.cursor()
-    res = []
     try:
         cur.execute(query.sql)
         res = [row for row in cur]

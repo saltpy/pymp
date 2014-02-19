@@ -33,13 +33,13 @@ class TestDb(unittest.TestCase):
         self.conn.close()
 
     def test_execution_causes_db_to_change(self):
-        execute(self.conn, Query(self.create_sql, None))
-        execute(self.conn, Query(self.insert_manager, None))
-        execute(self.conn, Query(self.insert_tester, None))
+        execute(self.conn, Query(self.create_sql))
+        execute(self.conn, Query(self.insert_manager))
+        execute(self.conn, Query(self.insert_tester))
         expected = [(1, u'Mick Manager', u'mick.manager@test.com', 4, 1),
                     (2, u'Toby Tester', u'toby.tester@test.com', 3, 1)]
 
-        actual = execute(self.conn, Query(self.select_all, None)).results
+        actual = execute(self.conn, Query(self.select_all)).results
 
         self.assertEquals(expected, actual)
 
