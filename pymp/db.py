@@ -11,7 +11,11 @@ def execute(conn, query):
     try:
         cur.execute(query.sql)
         res = [row for row in cur]
+        try:
+            headers = [i[0] for i in cur.description]
+        except TypeError:
+            headers = None
     finally:
         cur.close()
 
-    return Query(query.sql, res)
+    return Query(query.sql, res, headers)
