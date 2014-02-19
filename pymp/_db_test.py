@@ -2,7 +2,16 @@ import unittest
 
 import sqlite3
 
-from db import Query, execute, map_results
+from db import Query, execute, map_data
+
+
+class Person(object):
+    def __init__(self, id, name, email, level, manager):
+        self.id = id
+        self.name = name
+        self.email = email
+        self.level = level
+        self.manager = manager
 
 
 class TestDb(unittest.TestCase):
@@ -47,7 +56,7 @@ class TestDb(unittest.TestCase):
         self._make_people_table()
         expected = [self.manager, self.tester]
 
-        actual = execute(self.conn, Query(self.select_all)).results
+        actual = execute(self.conn, Query(self.select_all)).data
 
         self.assertEquals(expected, actual)
 
@@ -59,12 +68,25 @@ class TestDb(unittest.TestCase):
 
         self.assertEquals(expected, actual)
 
-    def test_can_get_results_as_objects(self):
+    def test_can_get_data_as_objects(self):
         self._make_people_table()
 
-        manager = map_results("Person",
-                              execute(self.conn,
-                                      Query(self.select_manager_by_id)))[0]
+        manager = map_data("Person",
+                           execute(self.conn,
+                                   Query(self.select_manager_by_id)))[0]
+
+        self.assertEquals(self.manager[0], manager.id)
+        self.assertEquals(self.manager[1], manager.name)
+        self.assertEquals(self.manager[2], manager.email)
+        self.assertEquals(self.manager[3], manager.level)
+        self.assertEquals(self.manager[4], manager.manager)
+
+    def test_can_map_with_custom_object(self):
+        self._make_people_table()
+
+        manager = map_data(Person,
+                           execute(self.conn,
+                                   Query(self.select_manager_by_id)))[0]
 
         self.assertEquals(self.manager[0], manager.id)
         self.assertEquals(self.manager[1], manager.name)
