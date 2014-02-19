@@ -2,7 +2,7 @@ import unittest
 
 import sqlite3
 
-from db import Query, execute, map_data
+from db import execute, map_data
 
 
 class Person(object):
@@ -48,15 +48,15 @@ class TestDb(unittest.TestCase):
         self.conn.close()
 
     def _make_people_table(self):
-        execute(self.conn, Query(self.create_sql))
-        execute(self.conn, Query(self.insert_manager))
-        execute(self.conn, Query(self.insert_tester))
+        execute(self.conn, self.create_sql)
+        execute(self.conn, self.insert_manager)
+        execute(self.conn, self.insert_tester)
 
     def test_execution_causes_db_to_change(self):
         self._make_people_table()
         expected = [self.manager, self.tester]
 
-        actual = execute(self.conn, Query(self.select_all)).data
+        actual = execute(self.conn, self.select_all).data
 
         self.assertEquals(expected, actual)
 
@@ -64,7 +64,7 @@ class TestDb(unittest.TestCase):
         self._make_people_table()
         expected = ['id', 'name', 'email', 'level', 'manager']
 
-        actual = execute(self.conn, Query(self.select_all)).headers
+        actual = execute(self.conn, self.select_all).headers
 
         self.assertEquals(expected, actual)
 
@@ -73,7 +73,7 @@ class TestDb(unittest.TestCase):
 
         manager = map_data("Person",
                            execute(self.conn,
-                                   Query(self.select_manager_by_id)))[0]
+                                   self.select_manager_by_id))[0]
 
         self.assertEquals(self.manager[0], manager.id)
         self.assertEquals(self.manager[1], manager.name)
@@ -86,7 +86,7 @@ class TestDb(unittest.TestCase):
 
         manager = map_data(Person,
                            execute(self.conn,
-                                   Query(self.select_manager_by_id)))[0]
+                                   self.select_manager_by_id))[0]
 
         self.assertEquals(self.manager[0], manager.id)
         self.assertEquals(self.manager[1], manager.name)

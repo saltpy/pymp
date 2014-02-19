@@ -1,15 +1,18 @@
 from collections import namedtuple
 
 
+__all__ = ['execute', 'map_data']
+
+
 class Query(namedtuple('Query', 'sql data headers')):
     def __new__(cls, sql, data=None, headers=None):
         return super(Query, cls).__new__(cls, sql, data, headers)
 
 
-def execute(conn, query):
+def execute(conn, sql):
     cur = conn.cursor()
     try:
-        cur.execute(query.sql)
+        cur.execute(sql)
         data = [row for row in cur]
         try:
             headers = [i[0] for i in cur.description]
@@ -18,7 +21,7 @@ def execute(conn, query):
     finally:
         cur.close()
 
-    return Query(query.sql, data, headers)
+    return Query(sql, data, headers)
 
 
 def map_data(identifier, query):
