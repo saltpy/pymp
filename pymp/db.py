@@ -3,10 +3,7 @@ from collections import namedtuple
 
 __all__ = ['execute', 'map_data']
 
-
-class Query(namedtuple('Query', 'sql data headers')):
-    def __new__(cls, sql, data=None, headers=None):
-        return super(Query, cls).__new__(cls, sql, data, headers)
+Query = namedtuple('Query', 'sql data headers')
 
 
 def execute(conn, sql):
