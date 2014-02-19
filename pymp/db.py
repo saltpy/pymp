@@ -19,3 +19,8 @@ def execute(conn, query):
         cur.close()
 
     return Query(query.sql, res, headers)
+
+
+def map_results(name, query):
+    Typ = namedtuple(name, query.headers)
+    return [Typ(*res) for res in query.results]
