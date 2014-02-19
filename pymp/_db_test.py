@@ -2,7 +2,7 @@ import unittest
 
 import sqlite3
 
-from db import Query, execute
+from db import Query, execute, map_results
 
 
 class TestDb(unittest.TestCase):
@@ -28,6 +28,9 @@ class TestDb(unittest.TestCase):
                                      3,
                                      1)"""
         self.select_all = """SELECT * FROM people"""
+        self.select_manager_by_id = """SELECT *
+                                       FROM people
+                                       WHERE people.id == 1"""
 
         self.manager = (1, u'Mick Manager', u'mick.manager@test.com', 4, 1)
         self.tester = (2, u'Toby Tester', u'toby.tester@test.com', 3, 1)
@@ -55,6 +58,19 @@ class TestDb(unittest.TestCase):
         actual = execute(self.conn, Query(self.select_all)).headers
 
         self.assertEquals(expected, actual)
+
+    def test_can_get_results_as_objects(self):
+        self._make_people_table()
+
+        manager = map_results("Person",
+                              execute(self.conn,
+                                      Query(self.select_manager_by_id)))[0]
+
+        self.assertEquals(self.manager[0], manager.id)
+        self.assertEquals(self.manager[1], manager.name)
+        self.assertEquals(self.manager[2], manager.email)
+        self.assertEquals(self.manager[3], manager.level)
+        self.assertEquals(self.manager[4], manager.manager)
 
 
 if __name__ == '__main__':
