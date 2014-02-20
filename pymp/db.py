@@ -32,5 +32,4 @@ def execute(conn, sql, values=None):
 
 
 def map_data(Type, query):
-    print query.data
     return [Type(*data) for data in query.data]
