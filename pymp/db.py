@@ -6,24 +6,31 @@ __all__ = ['execute', 'map_data']
 Query = namedtuple('Query', 'sql data headers')
 
 
-def execute(conn, sql):
+class DbException(Exception):
+    pass
+
+
+def execute(conn, sql, values=None):
     cur = conn.cursor()
     try:
-        cur.execute(sql)
+        if values is None:
+            cur.execute(sql)
+        else:
+            cur.executemany(sql, values)
         data = [row for row in cur]
         try:
             headers = [i[0] for i in cur.description]
         except TypeError:
             headers = None
+    except Exception as e:
+        raise DbException(str(e) + "\n\t" + sql + "\n\twith values: "
+                          + str(values))
     finally:
         cur.close()
 
     return Query(sql, data, headers)
 
 
-def map_data(identifier, query):
-    if isinstance(identifier, basestring):
-        Type = namedtuple(identifier, query.headers)
-    else:
-        Type = identifier
+def map_data(Type, query):
+    print query.data
     return [Type(*data) for data in query.data]

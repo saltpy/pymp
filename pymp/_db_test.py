@@ -4,6 +4,28 @@ import sqlite3
 
 from db import execute, map_data
 
+PRAGMA_FOREIGN_KEYS = """PRAGMA foreign_keys = ON"""
+CREATE_LEVELS_TABLE = """CREATE TABLE levels
+                             (id INTEGER PRIMARY KEY NOT NULL,
+                              desc TEXT NOT NULL)"""
+CREATE_PEOPLE_TABLE = """CREATE TABLE people
+                             (id INTEGER PRIMARY KEY NOT NULL,
+                              name TEXT NOT NULL,
+                              email TEXT NOT NULL,
+                              level INTEGER NOT NULL,
+                              manager INTEGER,
+                              FOREIGN KEY(level) REFERENCES levels(id),
+                              FOREIGN KEY(manager) REFERENCES people(id));"""
+INSERT_PEOPLE = """INSERT INTO people VALUES (?, ?, ?, ?, ?)"""
+INSERT_LEVELS = """INSERT INTO levels VALUES (?, ?)"""
+LEVEL_DATA = [(1, "New Analyst"), (2, "Analyst"), (3, "Senior Analyst"),
+              (4, "Consultant"), (5, "Senior Consultant"),
+              (6, "Lead Consultant"), (7, "Principal Consultant"),
+              (8, "Managing Principal"), (9, "Director")]
+PEOPLE_DATA = [(1, 'Mick Manager', 'mick.manager@test.com', 4, 1),
+               (2, 'Toby Tester', 'toby.tester@test.com', 3, 1)]
+SELECT_TESTER = """SELECT * FROM people WHERE people.id == 2"""
+
 
 class Person(object):
     def __init__(self, id, name, email, level, manager):
@@ -13,86 +35,58 @@ class Person(object):
         self.level = level
         self.manager = manager
 
+    def __eq__(self, other):
+        return isinstance(other, Person) and (
+            self.id == other.id and self.name == other.name
+            and self.email == other.email and self.level == other.level
+            and self.manager == other.manager)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return ''.join(["{id:", str(self.id), ", name:", str(self.name),
+                        ", email:", str(self.email), ", level:",
+                        str(self.level), ", manager:", str(self.manager), "}"])
+
+
+class Level(object):
+    def __init__(self, id, desc):
+        self.id = id
+        self.desc = desc
+
+    def __eq__(self, other):
+        return isinstance(other, Level) and (self.id == other.id
+                                             and self.desc == other.desc)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return ''.join(["{id:", str(self.id), ", desc:", str(self.desc), "}"])
+
 
 class TestDb(unittest.TestCase):
 
     def setUp(self):
         self.conn = sqlite3.connect(':memory:')
-        self.create_sql = """CREATE TABLE people
-                                (id INTEGER PRIMARY_KEY,
-                                 name TEXT,
-                                 email TEXT,
-                                 level INTEGER,
-                                 manager INTEGER)"""
-        self.insert_manager = """INSERT INTO people VALUES
-                                    (1,
-                                    "Mick Manager",
-                                     "mick.manager@test.com",
-                                     4,
-                                     1)"""
-        self.insert_tester = """INSERT INTO people VALUES
-                                    (2,
-                                    "Toby Tester",
-                                     "toby.tester@test.com",
-                                     3,
-                                     1)"""
-        self.select_all = """SELECT * FROM people"""
-        self.select_manager_by_id = """SELECT *
-                                       FROM people
-                                       WHERE people.id == 1"""
 
-        self.manager = (1, u'Mick Manager', u'mick.manager@test.com', 4, 1)
-        self.tester = (2, u'Toby Tester', u'toby.tester@test.com', 3, 1)
+        self.shallow_tester = Person(2, u"Toby Tester",
+                                     u"toby.tester@test.com", 3, 1)
+
+        execute(self.conn, PRAGMA_FOREIGN_KEYS)
+        execute(self.conn, CREATE_LEVELS_TABLE)
+        execute(self.conn, CREATE_PEOPLE_TABLE)
+        execute(self.conn, INSERT_LEVELS, values=LEVEL_DATA)
+        execute(self.conn, INSERT_PEOPLE, values=PEOPLE_DATA)
 
     def tearDown(self):
         self.conn.close()
 
-    def _make_people_table(self):
-        execute(self.conn, self.create_sql)
-        execute(self.conn, self.insert_manager)
-        execute(self.conn, self.insert_tester)
+    def test_map_data(self):
+        tester = map_data(Person, execute(self.conn, SELECT_TESTER))[0]
 
-    def test_execution_causes_db_to_change(self):
-        self._make_people_table()
-        expected = [self.manager, self.tester]
-
-        actual = execute(self.conn, self.select_all).data
-
-        self.assertEquals(expected, actual)
-
-    def test_a_query_should_record_the_headers_for_its_cursor(self):
-        self._make_people_table()
-        expected = ['id', 'name', 'email', 'level', 'manager']
-
-        actual = execute(self.conn, self.select_all).headers
-
-        self.assertEquals(expected, actual)
-
-    def test_can_get_data_as_objects(self):
-        self._make_people_table()
-
-        manager = map_data("Person",
-                           execute(self.conn,
-                                   self.select_manager_by_id))[0]
-
-        self.assertEquals(self.manager[0], manager.id)
-        self.assertEquals(self.manager[1], manager.name)
-        self.assertEquals(self.manager[2], manager.email)
-        self.assertEquals(self.manager[3], manager.level)
-        self.assertEquals(self.manager[4], manager.manager)
-
-    def test_can_map_with_custom_object(self):
-        self._make_people_table()
-
-        manager = map_data(Person,
-                           execute(self.conn,
-                                   self.select_manager_by_id))[0]
-
-        self.assertEquals(self.manager[0], manager.id)
-        self.assertEquals(self.manager[1], manager.name)
-        self.assertEquals(self.manager[2], manager.email)
-        self.assertEquals(self.manager[3], manager.level)
-        self.assertEquals(self.manager[4], manager.manager)
+        self.assertEquals(self.shallow_tester, tester)
 
 
 if __name__ == '__main__':
